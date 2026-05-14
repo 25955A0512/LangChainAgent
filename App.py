@@ -1,13 +1,17 @@
 import warnings
 warnings.filterwarnings("ignore")
 
-import os
 import streamlit as st
 from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
 
-from langchain.agents import initialize_agent, AgentType
+from langchain.agents import (
+    create_react_agent,
+    AgentExecutor
+)
+
+from langchain import hub
 
 from langchain_community.agent_toolkits.load_tools import load_tools
 
@@ -17,7 +21,10 @@ from duckduckgo_search import DDGS
 
 import requests
 
+# ---------------------------------------------------
 # Load Environment Variables
+# ---------------------------------------------------
+
 load_dotenv()
 
 # ---------------------------------------------------
@@ -149,8 +156,8 @@ def load_agent(groq_api_key, tavily_api_key):
         name="Search",
         func=search,
         description=(
-            "Search the internet for current information, "
-            "news, people, facts, and events."
+            "Useful for searching current events, news, facts, "
+            "people, and real-time information from the internet."
         )
     )
 
@@ -165,23 +172,34 @@ def load_agent(groq_api_key, tavily_api_key):
     ]
 
     # ------------------------------------------------
+    # Prompt
+    # ------------------------------------------------
+
+    prompt = hub.pull("hwchase17/react")
+
+    # ------------------------------------------------
     # Agent
     # ------------------------------------------------
 
-    agent = initialize_agent(
-        tools=tools,
+    agent = create_react_agent(
         llm=llm,
+        tools=tools,
+        prompt=prompt
+    )
 
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    # ------------------------------------------------
+    # Agent Executor
+    # ------------------------------------------------
 
+    agent_executor = AgentExecutor(
+        agent=agent,
+        tools=tools,
         verbose=False,
-
         handle_parsing_errors=True,
-
         max_iterations=5
     )
 
-    return agent
+    return agent_executor
 
 # Initialize Agent
 agent_executor = load_agent(groq_key, tavily_key)
@@ -225,7 +243,11 @@ if prompt := st.chat_input("Ask me anything..."):
 
             try:
 
-                response = agent_executor.run(prompt)
+                result = agent_executor.invoke({
+                    "input": prompt
+                })
+
+                response = result["output"]
 
             except Exception as e:
 
