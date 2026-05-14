@@ -1,8 +1,8 @@
 streamlit
-langchain
-langchain-groq
-langchain-community
-ddgs
-tavily-python
+langchain==0.3.25
+langchain-groq==0.3.2
+langchain-community==0.3.24
+duckduckgo-search
+requests
 python-dotenv
 numexpr
