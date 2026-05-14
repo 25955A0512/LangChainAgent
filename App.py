@@ -6,16 +6,13 @@ from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
 
-from langchain.agents import (
-    create_react_agent,
-    AgentExecutor
-)
+from langchain.agents import create_react_agent, AgentExecutor
 
 from langchain import hub
 
 from langchain_community.agent_toolkits.load_tools import load_tools
 
-from langchain_core.tools import Tool
+from langchain.tools import Tool
 
 from duckduckgo_search import DDGS
 
