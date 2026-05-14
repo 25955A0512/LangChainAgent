@@ -6,9 +6,10 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
-from langchain.agents import initialize_agent, AgentType
+from langchain.agents import AgentExecutor, create_react_agent
 from langchain_community.agent_toolkits.load_tools import load_tools
 from langchain.tools import Tool
+from langchain import hub
 from duckduckgo_search import DDGS
 import requests
 
@@ -43,7 +44,6 @@ def load_agent(groq_api_key: str, tavily_api_key: str):
 
     # Search Tool (Tavily → DuckDuckGo fallback)
     def search(query: str) -> str:
-        # Try Tavily first
         if tavily_api_key:
             try:
                 resp = requests.post(
@@ -61,7 +61,6 @@ def load_agent(groq_api_key: str, tavily_api_key: str):
             except Exception:
                 pass
 
-        # Fallback to DuckDuckGo
         try:
             with DDGS() as ddgs:
                 results = list(ddgs.text(query, max_results=5))
@@ -88,15 +87,20 @@ def load_agent(groq_api_key: str, tavily_api_key: str):
 
     tools = [search_tool, math_tool]
 
-    agent = initialize_agent(
+    # Pull standard ReAct prompt from LangChain hub
+    prompt = hub.pull("hwchase17/react")
+
+    agent = create_react_agent(llm=llm, tools=tools, prompt=prompt)
+
+    executor = AgentExecutor(
+        agent=agent,
         tools=tools,
-        llm=llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=False,
-        handle_parsing_errors=True
+        handle_parsing_errors=True,
+        max_iterations=8
     )
 
-    return agent
+    return executor
 
 agent_executor = load_agent(groq_key, tavily_key)
 
@@ -118,7 +122,8 @@ if prompt := st.chat_input("Ask me anything..."):
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
-                response = agent_executor.run(prompt)
+                result = agent_executor.invoke({"input": prompt})
+                response = result["output"]
             except Exception as e:
                 response = f"Error: {str(e)}"
         st.markdown(response)
