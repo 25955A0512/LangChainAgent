@@ -5,5 +5,5 @@ langchain-core==0.1.52
 langchain-groq==0.1.4
 python-dotenv==1.0.1
 duckduckgo-search==5.3.1b1
-numexpr==2.10.0
 requests==2.32.3
+numexpr==2.10.0
