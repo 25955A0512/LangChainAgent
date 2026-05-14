@@ -1,7 +1,8 @@
 streamlit
-langchain==0.3.25
-langchain-groq==0.3.2
-langchain-community==0.3.24
+langchain
+langchain-groq
+langchain-community
+langchain-core
 duckduckgo-search
 requests
 python-dotenv
