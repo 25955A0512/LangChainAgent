@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain_community.agent_toolkits.load_tools import load_tools
-from langchain.tools import Tool
-from langchain import hub
+from langchain_core.tools import Tool
+from langchain_core.prompts import PromptTemplate
 from duckduckgo_search import DDGS
 import requests
 
@@ -87,8 +87,25 @@ def load_agent(groq_api_key: str, tavily_api_key: str):
 
     tools = [search_tool, math_tool]
 
-    # Pull standard ReAct prompt from LangChain hub
-    prompt = hub.pull("hwchase17/react")
+    prompt = PromptTemplate.from_template("""Answer the following questions as best you can. You have access to the following tools:
+
+{tools}
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+Question: {input}
+Thought:{agent_scratchpad}""")
 
     agent = create_react_agent(llm=llm, tools=tools, prompt=prompt)
 
